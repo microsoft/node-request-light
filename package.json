@@ -1,6 +1,6 @@
 {
   "name": "request-light",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Lightweight request library. Promise based, with proxy support.",
   "main": "./lib/main.js",
   "typings": "./lib/main",
@@ -14,7 +14,6 @@
     "url": "https://github.com/Microsoft/node-request-light/issues"
   },
 	"devDependencies": {
-		"mocha": "^2.4.5",
 		"typescript": "^1.8.9"
 	},
 	"dependencies": {

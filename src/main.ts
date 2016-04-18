@@ -5,16 +5,18 @@
 
 'use strict';
 
-import { Url, parse as parseUrl } from 'url';
+import {Url, parse as parseUrl} from 'url';
 import https = require('https');
 import http = require('http');
 import HttpProxyAgent = require('http-proxy-agent');
 import HttpsProxyAgent = require('https-proxy-agent');
 
 import * as nls from 'vscode-nls';
+nls.config(process.env['VSCODE_NLS_CONFIG']);
+
 const localize = nls.loadMessageBundle();
 
-export interface IXHROptions {
+export interface XHROptions {
 	type?: string;
 	url?: string;
 	user?: string;
@@ -28,9 +30,13 @@ export interface IXHROptions {
 	followRedirects?: number;
 }
 
-export interface IXHRResponse {
+export interface XHRResponse {
 	responseText: string;
 	status: number;
+}
+
+export interface XHRRRequest {
+	(options: XHROptions): Promise<XHRResponse>
 }
 
 let proxyUrl: string = null;
@@ -41,7 +47,7 @@ export function configure(_proxyUrl: string, _strictSSL: boolean): void {
 	strictSSL = _strictSSL;
 }
 
-export function xhr(options: IXHROptions): Promise<IXHRResponse> {
+export function xhr(options: XHROptions): Promise<XHRResponse> {
 	const agent = getProxyAgent(options.url, { proxyUrl, strictSSL });
 	options = assign({}, options);
 	options = assign(options, { agent, strictSSL });
@@ -49,7 +55,7 @@ export function xhr(options: IXHROptions): Promise<IXHRResponse> {
 		options.followRedirects = 5;
 	}
 
-	return request(options).then(result => new Promise<IXHRResponse>((c, e) => {
+	return request(options).then(result => new Promise<XHRResponse>((c, e) => {
 		let res = result.res;
 		let data: string[] = [];
 		res.on('data', c => data.push(c));
@@ -66,7 +72,7 @@ export function xhr(options: IXHROptions): Promise<IXHRResponse> {
 				}
 			}
 
-			let response: IXHRResponse = {
+			let response: XHRResponse = {
 				responseText: data.join(''),
 				status: res.statusCode
 			};
@@ -81,12 +87,12 @@ export function xhr(options: IXHROptions): Promise<IXHRResponse> {
 		let message: string;
 
 		if (agent) {
-			message = 'Unable to to connect to ' + options.url + ' through a proxy . Error: ' + err.message;
+			message = localize('error.cannot.connect.proxy', 'Unable to to connect to {0} through a proxy . Error: {1}', options.url, err.message);
 		} else {
-			message = 'Unable to to connect to ' + options.url + '. Error: ' + err.message;
+			message = localize('error.cannot.connect', 'Unable to to connect to {0}. Error: {1}', options.url, err.message);
 		}
 
-		return Promise.reject<IXHRResponse>({
+		return Promise.reject<XHRResponse>({
 			responseText: message,
 			status: 404
 		});
@@ -98,15 +104,15 @@ function assign(destination: any, ...sources: any[]): any {
 	return destination;
 }
 
-interface IRequestResult {
+interface RequestResult {
 	req: http.ClientRequest;
 	res: http.ClientResponse;
 }
 
-function request(options: IXHROptions): Promise<IRequestResult> {
+function request(options: XHROptions): Promise<RequestResult> {
 	let req: http.ClientRequest;
 
-	return new Promise<IRequestResult>((c, e) => {
+	return new Promise<RequestResult>((c, e) => {
 		let endpoint = parseUrl(options.url);
 
 		let opts: https.RequestOptions = {
@@ -186,12 +192,12 @@ function getSystemProxyURI(requestURL: Url): string {
 	return null;
 }
 
-interface IOptions {
+interface ProxyOptions {
 	proxyUrl?: string;
 	strictSSL?: boolean;
 }
 
-function getProxyAgent(rawRequestURL: string, options: IOptions = {}): any {
+function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): any {
 	const requestURL = parseUrl(rawRequestURL);
 	const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL);
 
