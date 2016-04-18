@@ -35,7 +35,7 @@ export interface XHRResponse {
 	status: number;
 }
 
-export interface XHRRRequest {
+export interface XHRRequest {
 	(options: XHROptions): Promise<XHRResponse>
 }
 
