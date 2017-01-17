@@ -57,7 +57,7 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 
 	return request(options).then(result => new Promise<XHRResponse>((c, e) => {
 		let res = result.res;
-		let data: string[] = [];
+		let data: any = [];
 		res.on('data', c => data.push(c));
 		res.on('end', () => {
 			if (options.followRedirects > 0 && (res.statusCode >= 300 && res.statusCode <= 303 || res.statusCode === 307)) {
@@ -129,8 +129,7 @@ function request(options: XHROptions): Promise<RequestResult> {
 			opts.auth = options.user + ':' + options.password;
 		}
 
-		let protocol = endpoint.protocol === 'https:' ? https : http;
-		req = protocol.request(opts, (res: http.ClientResponse) => {
+		let handler = (res: http.ClientResponse) => {
 			if (res.statusCode >= 300 && res.statusCode < 400 && options.followRedirects && options.followRedirects > 0 && res.headers['location']) {
 				c(<any> request(assign({}, options, {
 					url: res.headers['location'],
@@ -139,7 +138,13 @@ function request(options: XHROptions): Promise<RequestResult> {
 			} else {
 				c({ req, res });
 			}
-		});
+		}
+		if (endpoint.protocol === 'https:') {
+			req = https.request(opts, handler);
+		} else {
+			req = http.request(opts, handler);
+		}
+
 		req.on('error', e);
 
 		if (options.timeout) {
