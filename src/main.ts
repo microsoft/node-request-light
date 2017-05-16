@@ -5,11 +5,12 @@
 
 'use strict';
 
-import {Url, parse as parseUrl} from 'url';
+import { Url, parse as parseUrl } from 'url';
 import https = require('https');
 import http = require('http');
 import HttpProxyAgent = require('http-proxy-agent');
 import HttpsProxyAgent = require('https-proxy-agent');
+import zlib = require('zlib');
 
 import * as nls from 'vscode-nls';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
@@ -57,9 +58,20 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 
 	return request(options).then(result => new Promise<XHRResponse>((c, e) => {
 		let res = result.res;
+		let readable: NodeJS.ReadableStream = res;
+		let encoding = res.headers && res.headers['content-encoding'];
+		if (encoding === 'gzip') {
+			let gunzip = zlib.createGunzip();
+			res.pipe(gunzip);
+			readable = gunzip;
+		} else if (encoding === 'deflate') {
+			let inflate = zlib.createInflate();
+			res.pipe(inflate);
+			readable = inflate;
+		}
 		let data: any = [];
-		res.on('data', c => data.push(c));
-		res.on('end', () => {
+		readable.on('data', c => data.push(c));
+		readable.on('end', () => {
 			if (options.followRedirects > 0 && (res.statusCode >= 300 && res.statusCode <= 303 || res.statusCode === 307)) {
 				let location = res.headers['location'];
 				if (location) {
@@ -131,7 +143,7 @@ function request(options: XHROptions): Promise<RequestResult> {
 
 		let handler = (res: http.ClientResponse) => {
 			if (res.statusCode >= 300 && res.statusCode < 400 && options.followRedirects && options.followRedirects > 0 && res.headers['location']) {
-				c(<any> request(assign({}, options, {
+				c(<any>request(assign({}, options, {
 					url: res.headers['location'],
 					followRedirects: options.followRedirects - 1
 				})));
@@ -158,7 +170,7 @@ function request(options: XHROptions): Promise<RequestResult> {
 	});
 }
 
-export function getErrorStatusDescription(status: number) : string {
+export function getErrorStatusDescription(status: number): string {
 	if (status < 400) {
 		return void 0;
 	}
