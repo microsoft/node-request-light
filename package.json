@@ -14,13 +14,13 @@
     "url": "https://github.com/Microsoft/node-request-light/issues"
   },
   "devDependencies": {
-    "typescript": "^2.1.5",
-    "@types/node": "^6.0.51",
+    "typescript": "^2.6.2",
+    "@types/node": "7.0.43",
     "@types/mocha": "^2.2.33"
   },
   "dependencies": {
-    "http-proxy-agent": "^0.2.6",
-    "https-proxy-agent": "^0.3.5",
+    "http-proxy-agent": "2.0.0",
+    "https-proxy-agent": "2.1.1",
     "vscode-nls": "^2.0.2"
   },
   "scripts": {
