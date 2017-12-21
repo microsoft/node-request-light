@@ -60,6 +60,7 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 		let res = result.res;
 		let readable: NodeJS.ReadableStream = res;
 		let encoding = res.headers && res.headers['content-encoding'];
+		let isCompleted = false;
 		if (encoding === 'gzip') {
 			let gunzip = zlib.createGunzip();
 			res.pipe(gunzip);
@@ -72,6 +73,10 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 		let data: any = [];
 		readable.on('data', c => data.push(c));
 		readable.on('end', () => {
+			if (isCompleted) {
+				return;
+			}
+			isCompleted = true;
 			if (options.followRedirects > 0 && (res.statusCode >= 300 && res.statusCode <= 303 || res.statusCode === 307)) {
 				let location = res.headers['location'];
 				if (location) {
@@ -95,13 +100,21 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 				e(response);
 			}
 		});
+		readable.on('error', (err) => {
+			let response: XHRResponse = {
+				responseText: localize('error', 'Unable to access {0}. Error: {1}', options.url, err.message),
+				status: 500
+			};
+			isCompleted = true;
+			e(response);
+		});
 	}), err => {
 		let message: string;
 
 		if (agent) {
-			message = localize('error.cannot.connect.proxy', 'Unable to to connect to {0} through a proxy . Error: {1}', options.url, err.message);
+			message = localize('error.cannot.connect.proxy', 'Unable to connect to {0} through a proxy . Error: {1}', options.url, err.message);
 		} else {
-			message = localize('error.cannot.connect', 'Unable to to connect to {0}. Error: {1}', options.url, err.message);
+			message = localize('error.cannot.connect', 'Unable to connect to {0}. Error: {1}', options.url, err.message);
 		}
 
 		return Promise.reject<XHRResponse>({
