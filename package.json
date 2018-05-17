@@ -19,8 +19,8 @@
     "@types/mocha": "^2.2.33"
   },
   "dependencies": {
-    "http-proxy-agent": "2.0.0",
-    "https-proxy-agent": "2.1.1",
+    "http-proxy-agent": "^2.1.0",
+    "https-proxy-agent": "^2.2.1",
     "vscode-nls": "^2.0.2"
   },
   "scripts": {
