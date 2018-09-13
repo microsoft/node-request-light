@@ -20,7 +20,7 @@
   "dependencies": {
     "http-proxy-agent": "^2.1.0",
     "https-proxy-agent": "^2.2.1",
-    "vscode-nls": "^3.2.2"
+    "vscode-nls": "^4.0.0"
   },
   "scripts": {
     "prepublish": "tsc -p ./src",
