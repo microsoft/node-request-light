@@ -15,7 +15,8 @@
   },
   "devDependencies": {
     "typescript": "^2.8.3",
-    "@types/node": "7.0.43"
+    "@types/node": "7.0.43",
+    "rimraf": "^3.0.0"
   },
   "dependencies": {
     "http-proxy-agent": "^2.1.0",
@@ -23,8 +24,11 @@
     "vscode-nls": "^4.1.1"
   },
   "scripts": {
-    "prepublishOnly": "tsc -p ./src",
+    "prepublishOnly": "npm run clean && npm run compile && npm run remove-sourcemap-refs",
     "compile": "tsc -p ./src",
-    "watch": "tsc -w -p ./src"
+    "watch": "tsc -w -p ./src",
+    "clean": "rimraf lib",
+    "remove-sourcemap-refs": "node ./build/remove-sourcemap-refs.js",
+    "postversion": "git push && git push --tags"
   }
 }
