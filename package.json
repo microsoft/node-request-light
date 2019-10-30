@@ -7,11 +7,11 @@
   "author": "Microsoft Corporation",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/node-request-light"
+    "url": "https://github.com/microsoft/node-request-light"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Microsoft/node-request-light/issues"
+    "url": "https://github.com/microsoft/node-request-light/issues"
   },
   "devDependencies": {
     "typescript": "^2.8.3",
@@ -19,11 +19,11 @@
   },
   "dependencies": {
     "http-proxy-agent": "^2.1.0",
-    "https-proxy-agent": "^2.2.1",
-    "vscode-nls": "^4.0.0"
+    "https-proxy-agent": "^2.2.3",
+    "vscode-nls": "^4.1.1"
   },
   "scripts": {
-    "prepublish": "tsc -p ./src",
+    "prepublishOnly": "tsc -p ./src",
     "compile": "tsc -p ./src",
     "watch": "tsc -w -p ./src"
   }
