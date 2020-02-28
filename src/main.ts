@@ -13,7 +13,10 @@ import HttpsProxyAgent = require('https-proxy-agent');
 import zlib = require('zlib');
 
 import * as nls from 'vscode-nls';
-nls.config(process.env['VSCODE_NLS_CONFIG']);
+if (process.env.VSCODE_NLS_CONFIG) {
+	let VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
+	nls.config(JSON.parse(VSCODE_NLS_CONFIG));
+}
 
 const localize = nls.loadMessageBundle();
 
@@ -34,6 +37,7 @@ export interface XHROptions {
 export interface XHRResponse {
 	responseText: string;
 	status: number;
+	headers: any;
 }
 
 export interface XHRRequest {
@@ -91,7 +95,8 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 
 			let response: XHRResponse = {
 				responseText: data.join(''),
-				status: res.statusCode
+				status: res.statusCode,
+				headers: res.headers || {}
 			};
 
 			if ((res.statusCode >= 200 && res.statusCode < 300) || res.statusCode === 1223) {
@@ -103,7 +108,8 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 		readable.on('error', (err) => {
 			let response: XHRResponse = {
 				responseText: localize('error', 'Unable to access {0}. Error: {1}', options.url, err.message),
-				status: 500
+				status: 500,
+				headers: undefined,
 			};
 			isCompleted = true;
 			e(response);
@@ -131,7 +137,7 @@ function assign(destination: any, ...sources: any[]): any {
 
 interface RequestResult {
 	req: http.ClientRequest;
-	res: http.ClientResponse;
+	res: http.IncomingMessage;
 }
 
 function request(options: XHROptions): Promise<RequestResult> {
@@ -154,7 +160,7 @@ function request(options: XHROptions): Promise<RequestResult> {
 			opts.auth = options.user + ':' + options.password;
 		}
 
-		let handler = (res: http.ClientResponse) => {
+		let handler = (res: http.IncomingMessage) => {
 			if (res.statusCode >= 300 && res.statusCode < 400 && options.followRedirects && options.followRedirects > 0 && res.headers['location']) {
 				c(<any>request(assign({}, options, {
 					url: res.headers['location'],

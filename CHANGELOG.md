@@ -1,3 +1,7 @@
+0.3.0 / 2019-11-30
+==================
+* Add XHRResponse.headers
+
 0.2.5 / 2019-11-30
 ==================
 * update https-proxy-agent
