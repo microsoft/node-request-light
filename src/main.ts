@@ -55,7 +55,7 @@ export function configure(_proxyUrl: string, _strictSSL: boolean): void {
 export function xhr(options: XHROptions): Promise<XHRResponse> {
 	const agent = getProxyAgent(options.url, { proxyUrl, strictSSL });
 	options = assign({}, options);
-	options = assign(options, { agent, strictSSL });
+	options = assign({ agent, strictSSL }, options);
 	if (typeof options.followRedirects !== 'number') {
 		options.followRedirects = 5;
 	}
