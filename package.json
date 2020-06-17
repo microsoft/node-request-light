@@ -4,8 +4,8 @@
   "description": "Lightweight request library. Promise based, with proxy support.",
   "main": "./lib/node/main.js",
   "browser": {
-		"./lib/node/main.js": "./lib/browser/main.js"
-	},
+    "./lib/node/main.js": "./lib/browser/main.js"
+  },
   "typings": "./lib/node/main",
   "author": "Microsoft Corporation",
   "repository": {
