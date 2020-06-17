@@ -2,8 +2,11 @@
   "name": "request-light",
   "version": "0.3.0",
   "description": "Lightweight request library. Promise based, with proxy support.",
-  "main": "./lib/main.js",
-  "typings": "./lib/main",
+  "main": "./lib/node/main.js",
+  "browser": {
+		"./lib/node/main.js": "./lib/browser/main.js"
+	},
+  "typings": "./lib/node/main",
   "author": "Microsoft Corporation",
   "repository": {
     "type": "git",
@@ -25,8 +28,8 @@
   },
   "scripts": {
     "prepublishOnly": "npm run clean && npm run compile && npm run remove-sourcemap-refs",
-    "compile": "tsc -p ./src",
-    "watch": "tsc -w -p ./src",
+    "compile": "tsc -p ./src/node && tsc -p ./src/browser",
+    "watch": "tsc -w -p ./src/node tsc -w -p ./src/browser",
     "clean": "rimraf lib",
     "remove-sourcemap-refs": "node ./build/remove-sourcemap-refs.js",
     "postversion": "git push && git push --tags"
