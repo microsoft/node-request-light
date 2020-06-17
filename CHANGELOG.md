@@ -1,3 +1,7 @@
+0.4.0 / 2020-06-17
+==================
+* support for browser ('browser' in package.json)
+
 0.3.0 / 2020-02-28
 ==================
 * Add XHRResponse.headers
