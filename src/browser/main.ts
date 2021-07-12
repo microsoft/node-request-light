@@ -3,36 +3,22 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-export interface XHROptions {
-	type?: string;
-	url?: string;
-	user?: string;
-	password?: string;
-	headers?: any;
-	timeout?: number;
-	data?: any;
-	agent?: any;
-	strictSSL?: boolean;
-	responseType?: string;
-	followRedirects?: number;
-}
+import { XHRRequest, XHRConfigure, XHROptions, XHRResponse } from '../../api';
 
-export interface XHRResponse {
-	responseText: string;
-	status: number;
-	headers: any;
-}
+export const configure: XHRConfigure = (_proxyUrl: string, _strictSSL: boolean) => { };
 
-export interface XHRRequest {
-	(options: XHROptions): Promise<XHRResponse>
-}
-
-
-export function configure(_proxyUrl: string, _strictSSL: boolean): void {
-}
-
-export async function xhr(options: XHROptions): Promise<XHRResponse> {
-	const requestHeaders = new Headers(options.headers || {});
+export const xhr: XHRRequest = async (options: XHROptions): Promise<XHRResponse> => {
+	const requestHeaders = new Headers();
+	if (options.headers) {
+		for (const key in options.headers) {
+			const value = options.headers[key];
+			if (Array.isArray(value)) {
+				value.forEach(v => requestHeaders.set(key, v))
+			} else {
+				requestHeaders.set(key, value);
+			}
+		}
+	}
 	if (options.user && options.password) {
 		requestHeaders.set('Authorization', 'Basic ' + btoa(options.user + ":" + options.password));
 	}
@@ -42,7 +28,7 @@ export async function xhr(options: XHROptions): Promise<XHRResponse> {
 		mode: 'cors',
 		headers: requestHeaders
 	};
-	
+
 	const requestInfo = new Request(options.url, requestInit);
 	const response = await fetch(requestInfo);
 	const resposeHeaders: any = {};
@@ -52,7 +38,12 @@ export async function xhr(options: XHROptions): Promise<XHRResponse> {
 
 	return {
 		responseText: await response.text(),
+		body: new Uint8Array(await response.arrayBuffer()),
 		status: response.status,
 		headers: resposeHeaders
 	}
+}
+
+export function getErrorStatusDescription(status: number): string {
+	return String(status);
 }

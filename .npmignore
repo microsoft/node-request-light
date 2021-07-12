@@ -1,6 +1,10 @@
 .vscode/
 lib/test/
-lib/*.map
+lib/**/*.map
 src/
+polyfill/
+build/
+.github/
 .eslintrc
 .gitignore
+webpack.config.js

@@ -2,57 +2,32 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-
-'use strict';
-
 import { Url, parse as parseUrl } from 'url';
-import https = require('https');
-import http = require('http');
-import HttpProxyAgent = require('http-proxy-agent');
-import HttpsProxyAgent = require('https-proxy-agent');
-import zlib = require('zlib');
-
+import * as  https from 'https';
+import * as  http from 'http';
+import * as zlib from 'zlib';
 import * as nls from 'vscode-nls';
+
+import * as createHttpsProxyAgent  from 'https-proxy-agent';
+import * as createHttpProxyAgent from 'http-proxy-agent';
+
+import { XHRRequest, XHRConfigure, XHROptions, XHRResponse } from '../../api';
+
 if (process.env.VSCODE_NLS_CONFIG) {
 	let VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
 	nls.config(JSON.parse(VSCODE_NLS_CONFIG));
 }
-
 const localize = nls.loadMessageBundle();
-
-export interface XHROptions {
-	type?: string;
-	url?: string;
-	user?: string;
-	password?: string;
-	headers?: any;
-	timeout?: number;
-	data?: any;
-	agent?: any;
-	strictSSL?: boolean;
-	responseType?: string;
-	followRedirects?: number;
-}
-
-export interface XHRResponse {
-	responseText: string;
-	status: number;
-	headers: any;
-}
-
-export interface XHRRequest {
-	(options: XHROptions): Promise<XHRResponse>
-}
 
 let proxyUrl: string = null;
 let strictSSL: boolean = true;
 
-export function configure(_proxyUrl: string, _strictSSL: boolean): void {
+export const configure: XHRConfigure = (_proxyUrl: string, _strictSSL: boolean) => {
 	proxyUrl = _proxyUrl;
 	strictSSL = _strictSSL;
-}
+};
 
-export function xhr(options: XHROptions): Promise<XHRResponse> {
+export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 	const agent = getProxyAgent(options.url, { proxyUrl, strictSSL });
 	options = assign({}, options);
 	options = assign(options, { agent, strictSSL });
@@ -85,7 +60,7 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 				let location = res.headers['location'];
 				if (location) {
 					let newOptions = {
-						type: options.type, url: location, user: options.user, password: options.password, responseType: options.responseType, headers: options.headers,
+						type: options.type, url: location, user: options.user, password: options.password, headers: options.headers,
 						timeout: options.timeout, followRedirects: options.followRedirects - 1, data: options.data
 					};
 					xhr(newOptions).then(c, e);
@@ -93,8 +68,11 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 				}
 			}
 
+			const buffer = Buffer.concat(data);
+
 			let response: XHRResponse = {
-				responseText: data.join(''),
+				responseText: buffer.toString(),
+				body: buffer,
 				status: res.statusCode,
 				headers: res.headers || {}
 			};
@@ -108,8 +86,9 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 		readable.on('error', (err) => {
 			let response: XHRResponse = {
 				responseText: localize('error', 'Unable to access {0}. Error: {1}', options.url, err.message),
+				body: Buffer.concat(data),
 				status: 500,
-				headers: undefined,
+				headers: {}
 			};
 			isCompleted = true;
 			e(response);
@@ -125,7 +104,9 @@ export function xhr(options: XHROptions): Promise<XHRResponse> {
 
 		return Promise.reject<XHRResponse>({
 			responseText: message,
-			status: 404
+			body: Buffer.concat([]),
+			status: 404,
+			headers: {}
 		});
 	});
 }
@@ -152,7 +133,6 @@ function request(options: XHROptions): Promise<RequestResult> {
 			path: endpoint.path,
 			method: options.type || 'GET',
 			headers: options.headers,
-			agent: options.agent,
 			rejectUnauthorized: (typeof options.strictSSL === 'boolean') ? options.strictSSL : true
 		};
 
@@ -254,5 +234,5 @@ function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): any {
 		rejectUnauthorized: (typeof options.strictSSL === 'boolean') ? options.strictSSL : true
 	};
 
-	return requestURL.protocol === 'http:' ? new HttpProxyAgent(opts) : new HttpsProxyAgent(opts);
+	return requestURL.protocol === 'http:' ? createHttpProxyAgent(opts) : createHttpsProxyAgent(opts);
 }

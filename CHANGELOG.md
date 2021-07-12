@@ -1,3 +1,11 @@
+
+0.5.0 / 2021-07-12
+==================
+* support binary content (XHRResponse.body)
+* updated to http-proxy-agent@4.0.1, https-proxy-agent@5.0.0
+* webpacked, stripping out debug and dependencies
+* tests
+
 0.4.0 / 2020-06-17
 ==================
 * support for browser ('browser' in package.json)

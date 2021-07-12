@@ -4,7 +4,6 @@
  		"module": "commonjs", 
  		"moduleResolution": "node", 
  		"sourceMap": true, 
- 		"declaration": true, 
  		"stripInternal": true, 
  		"outDir": "../../lib/browser",
 		"lib": [
