@@ -16,13 +16,13 @@ jobs:
         with:
           node-version: 12.x
       - name: Install root project dependencies
-        run: yarn
+        run: npm install
       - name: Buold root project
-        run: yarn compile
-      - name: Install sample project dependencies
-        run: yarn
+        run: npm compile
+      - name: npm sample project dependencies
+        run: npm
         working-directory: ./sample
       - name: Run tests
         uses: GabrielBB/xvfb-action@v1.0
         with:
-          run: yarn test
+          run: npm test
