@@ -14,15 +14,10 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 14.x
       - name: Install root project dependencies
         run: npm install
-      - name: Buold root project
-        run: npm compile
-      - name: npm sample project dependencies
-        run: npm
-        working-directory: ./sample
-      - name: Run tests
+      - name: Build and run tests
         uses: GabrielBB/xvfb-action@v1.0
         with:
           run: npm test
