@@ -32,15 +32,17 @@ export const xhr: XHRRequest = async (options: XHROptions): Promise<XHRResponse>
 	const requestInfo = new Request(options.url, requestInit);
 	const response = await fetch(requestInfo);
 	const resposeHeaders: any = {};
-	for (let name in response.headers) {
-		resposeHeaders[name] = response.headers.get(name);
-	}
+	response.headers.forEach((value, key) => {
+		resposeHeaders[key] = value;
+	});
 
-	return {
-		responseText: await response.text(),
-		body: new Uint8Array(await response.arrayBuffer()),
-		status: response.status,
-		headers: resposeHeaders
+	const buffer = await response.arrayBuffer();
+
+	return new class {
+		get responseText() { return new TextDecoder().decode(buffer); };
+		get body() { return new Uint8Array(buffer) };
+		readonly status = response.status;
+		readonly headers = resposeHeaders;
 	}
 }
 
