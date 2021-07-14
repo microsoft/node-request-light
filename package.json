@@ -1,6 +1,6 @@
 {
   "name": "request-light",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Lightweight request library. Promise based, with proxy support.",
   "main": "./lib/node/main.js",
   "browser": {
