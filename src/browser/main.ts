@@ -28,6 +28,9 @@ export const xhr: XHRRequest = async (options: XHROptions): Promise<XHRResponse>
 		mode: 'cors',
 		headers: requestHeaders
 	};
+	if (options.data) {
+		requestInit.body = options.data;
+	}
 
 	const requestInfo = new Request(options.url, requestInit);
 	const response = await fetch(requestInfo);
