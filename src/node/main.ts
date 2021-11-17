@@ -2,7 +2,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Url, parse as parseUrl } from 'url';
+import { Url, parse as parseUrl, URL, format } from 'url';
 import * as  https from 'https';
 import * as  http from 'http';
 import * as zlib from 'zlib';
@@ -57,6 +57,15 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 			isCompleted = true;
 			if (options.followRedirects > 0 && (res.statusCode >= 300 && res.statusCode <= 303 || res.statusCode === 307)) {
 				let location = res.headers['location'];
+				if(location.startsWith('/')){
+					let endpoint = parseUrl(options.url);
+					location = format({
+						protocol: endpoint.protocol,
+						hostname: endpoint.hostname,
+						port: endpoint.port,
+						pathname: location
+					});
+				}
 				if (location) {
 					let newOptions = {
 						type: options.type, url: location, user: options.user, password: options.password, headers: options.headers,
@@ -141,8 +150,17 @@ function request(options: XHROptions): Promise<RequestResult> {
 
 		let handler = (res: http.IncomingMessage) => {
 			if (res.statusCode >= 300 && res.statusCode < 400 && options.followRedirects && options.followRedirects > 0 && res.headers['location']) {
+				let location = res.headers['location'];
+				if(location.startsWith('/')){
+					location = format({
+						protocol: endpoint.protocol,
+						hostname: endpoint.hostname,
+						port: endpoint.port,
+						pathname: location
+					});
+				}
 				c(<any>request(assign({}, options, {
-					url: res.headers['location'],
+					url: location,
 					followRedirects: options.followRedirects - 1
 				})));
 			} else {

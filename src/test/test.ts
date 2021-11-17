@@ -7,6 +7,7 @@ import { createServer, createSecureServer, createProxy, createSecureProxy } from
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { IncomingMessage, ServerResponse } from 'http';
 
 test('text content', async t => {
     const testContent = JSON.stringify({ hello: 1, world: true})
@@ -82,4 +83,28 @@ test('proxy https to https', async t => {
 
     server.close();
     proxy.close();
-})
+});
+
+test('relative redirect', async t => {
+    const server = await createServer();
+
+    server.on('request', (req:IncomingMessage, res: ServerResponse) => {
+        if(req.url.includes('/foo')) {
+            res.setHeader('Location', '/bar');
+            res.statusCode = 301;
+            res.end();
+        }
+        if(req.url.includes('/bar')){
+            res.end('Bar');
+        }
+    });
+
+    const serverAddress = server.address() as AddressInfo;
+
+    const response = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}/foo` });
+
+    t.deepEqual(response.body.toString(), 'Bar');
+    t.is(response.status, 200);
+
+    server.close();
+});
