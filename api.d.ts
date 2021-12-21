@@ -12,6 +12,7 @@ export interface XHROptions {
     data?: string;
     strictSSL?: boolean;
     followRedirects?: number;
+    agent?: HttpProxyAgent | HttpsProxyAgent;
 }
 
 export interface XHRResponse {
@@ -28,6 +29,10 @@ export interface XHRRequest {
 export interface XHRConfigure {
     (proxyUrl: string, strictSSL: boolean): void;
 }
+
+export type HttpProxyAgent = import('http-proxy-agent').HttpProxyAgent;
+
+export type HttpsProxyAgent = import('https-proxy-agent').HttpsProxyAgent;
 
 export type Headers = { [header: string]: string | string[] | undefined };
 

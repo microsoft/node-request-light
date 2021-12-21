@@ -64,6 +64,28 @@ test('proxy http to http', async t => {
     proxy.close();
 });
 
+test('invalid proxy http to http', async t => {
+    const server = await createServer();
+    const proxy = await createProxy();
+    server.on('request', (req, res) => res.end('ok'));
+
+    const invalidProxyAddress = {
+        address: '192.168.29.165',
+        port: '808'
+    }
+
+    configure(`http://${invalidProxyAddress.address}:${invalidProxyAddress.port}`, false);
+
+    const serverAddress = server.address() as AddressInfo;
+
+    await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}` }).catch((response) => {
+        t.deepEqual(response.responseText, 'Unable to connect to http://' + `${serverAddress.address}` + ':' + `${serverAddress.port}` + ' through a proxy . Error: connect ECONNREFUSED 192.168.29.165:808');
+        t.is(response.status, 404);
+    });
+    server.close();
+    proxy.close();
+});
+
 
 test('proxy https to https', async t => {
     const server = await createSecureServer();
@@ -72,7 +94,7 @@ test('proxy https to https', async t => {
 
     const proxyAddress = proxy.address() as AddressInfo;
 
-    configure(`http://${proxyAddress.address}:${proxyAddress.port}`, false);
+    configure(`https://${proxyAddress.address}:${proxyAddress.port}`, false);
 
     const serverAddress = server.address() as AddressInfo;
 
@@ -88,13 +110,13 @@ test('proxy https to https', async t => {
 test('relative redirect', async t => {
     const server = await createServer();
 
-    server.on('request', (req:IncomingMessage, res: ServerResponse) => {
-        if(req.url.includes('/foo')) {
+    server.on('request', (req: IncomingMessage, res: ServerResponse) => {
+        if (req.url.includes('/foo')) {
             res.setHeader('Location', '/bar');
             res.statusCode = 301;
             res.end();
         }
-        if(req.url.includes('/bar')){
+        if (req.url.includes('/bar')) {
             res.end('Bar');
         }
     });
