@@ -3,8 +3,8 @@
 ![Test Status Badge](https://github.com/microsoft/node-request-light/workflows/Tests/badge.svg)
 
 A lightweight request library intended to be used by VSCode extensions.
-- supports NodeJS and browser main entr points
-- supports proxies: Use `configure` or `HTTP_PROXY` and `HTTPS_PROXY` env variables to set the proxy address.
+- NodeJS and browser main entry points
+- proxy support: Use `configure` or `HTTP_PROXY` and `HTTPS_PROXY` env variables to configure the HTTP proxy addresses.
 
 ```ts
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
