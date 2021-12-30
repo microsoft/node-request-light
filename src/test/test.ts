@@ -10,7 +10,7 @@ import { join } from 'path';
 import { IncomingMessage, ServerResponse } from 'http';
 
 test('text content', async t => {
-    const testContent = JSON.stringify({ hello: 1, world: true})
+    const testContent = JSON.stringify({ hello: 1, world: true })
 
     const server = await createServer();
     server.on('request', (req, res) => res.end(testContent));
@@ -45,9 +45,11 @@ test('binary content', async t => {
 
 
 test('proxy http to http', async t => {
+    let proxyUsed = false;
     const server = await createServer();
     const proxy = await createProxy();
     server.on('request', (req, res) => res.end('ok'));
+    proxy.on('request', () => proxyUsed = true);
 
     const proxyAddress = proxy.address() as AddressInfo;
 
@@ -59,38 +61,18 @@ test('proxy http to http', async t => {
 
     t.is(response.responseText, 'ok');
     t.is(response.status, 200);
+    t.is(proxyUsed, true);
 
     server.close();
     proxy.close();
 });
-
-test('invalid proxy http to http', async t => {
-    const server = await createServer();
-    const proxy = await createProxy();
-    server.on('request', (req, res) => res.end('ok'));
-
-    const invalidProxyAddress = {
-        address: '192.168.29.165',
-        port: '808'
-    }
-
-    configure(`http://${invalidProxyAddress.address}:${invalidProxyAddress.port}`, false);
-
-    const serverAddress = server.address() as AddressInfo;
-
-    await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}` }).catch((response) => {
-        t.deepEqual(response.responseText, 'Unable to connect to http://' + `${serverAddress.address}` + ':' + `${serverAddress.port}` + ' through a proxy . Error: connect ECONNREFUSED 192.168.29.165:808');
-        t.is(response.status, 404);
-    });
-    server.close();
-    proxy.close();
-});
-
 
 test('proxy https to https', async t => {
+    let proxyUsed = false;
     const server = await createSecureServer();
     const proxy = await createSecureProxy();
-    server.on('request', (req, res) => res.end('ok'))
+    server.on('request', (req, res) => res.end('ok'));
+    proxy.on('request', () => proxyUsed = true);
 
     const proxyAddress = proxy.address() as AddressInfo;
 
@@ -102,6 +84,7 @@ test('proxy https to https', async t => {
 
     t.is(response.responseText, 'ok');
     t.is(response.status, 200);
+    t.is(proxyUsed, true);
 
     server.close();
     proxy.close();
