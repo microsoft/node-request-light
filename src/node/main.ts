@@ -137,6 +137,7 @@ function request(options: XHROptions): Promise<RequestResult> {
 
 		let opts: https.RequestOptions = {
 			hostname: endpoint.hostname,
+			agent: options.agent ? options.agent : false,
 			port: endpoint.port ? parseInt(endpoint.port) : (endpoint.protocol === 'https:' ? 443 : 80),
 			path: endpoint.path,
 			method: options.type || 'GET',
@@ -248,7 +249,8 @@ function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): any {
 		host: proxyEndpoint.hostname,
 		port: Number(proxyEndpoint.port),
 		auth: proxyEndpoint.auth,
-		rejectUnauthorized: (typeof options.strictSSL === 'boolean') ? options.strictSSL : true
+		rejectUnauthorized: (typeof options.strictSSL === 'boolean') ? options.strictSSL : true,
+		protocol: proxyEndpoint.protocol
 	};
 
 	return requestURL.protocol === 'http:' ? createHttpProxyAgent(opts) : createHttpsProxyAgent(opts);
