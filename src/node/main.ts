@@ -14,7 +14,7 @@ import * as createHttpProxyAgent from 'http-proxy-agent';
 import { XHRRequest, XHRConfigure, XHROptions, XHRResponse, HttpProxyAgent, HttpsProxyAgent } from '../../api';
 
 if (process.env.VSCODE_NLS_CONFIG) {
-	let VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
+	const VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
 	nls.config(JSON.parse(VSCODE_NLS_CONFIG));
 }
 const localize = nls.loadMessageBundle();
@@ -41,20 +41,27 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 	}
 
 	return request(options).then(result => new Promise<XHRResponse>((c, e) => {
-		let res = result.res;
+		const res = result.res;
 		let readable: NodeJS.ReadableStream = res;
-		let encoding = res.headers && res.headers['content-encoding'];
 		let isCompleted = false;
-		if (encoding === 'gzip') {
-			let gunzip = zlib.createGunzip();
-			res.pipe(gunzip);
-			readable = gunzip;
-		} else if (encoding === 'deflate') {
-			let inflate = zlib.createInflate();
-			res.pipe(inflate);
-			readable = inflate;
+
+		const encoding = res.headers && res.headers['content-encoding'];
+		if (encoding && !hasNoBody(options.type, result.res.statusCode)) {
+			const zlibOptions = {
+				flush: zlib.constants.Z_SYNC_FLUSH,
+				finishFlush: zlib.constants.Z_SYNC_FLUSH
+			};
+			if (encoding === 'gzip') {
+				const gunzip = zlib.createGunzip(zlibOptions);
+				res.pipe(gunzip);
+				readable = gunzip;
+			} else if (encoding === 'deflate') {
+				const inflate = zlib.createInflate(zlibOptions);
+				res.pipe(inflate);
+				readable = inflate;
+			}
 		}
-		let data: any = [];
+		const data: any = [];
 		readable.on('data', c => data.push(c));
 		readable.on('end', () => {
 			if (isCompleted) {
@@ -64,7 +71,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 			if (options.followRedirects > 0 && (res.statusCode >= 300 && res.statusCode <= 303 || res.statusCode === 307)) {
 				let location = res.headers['location'];
 				if (location.startsWith('/')) {
-					let endpoint = parseUrl(options.url);
+					const endpoint = parseUrl(options.url);
 					location = format({
 						protocol: endpoint.protocol,
 						hostname: endpoint.hostname,
@@ -73,7 +80,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 					});
 				}
 				if (location) {
-					let newOptions = {
+					const newOptions = {
 						type: options.type, url: location, user: options.user, password: options.password, headers: options.headers,
 						timeout: options.timeout, followRedirects: options.followRedirects - 1, data: options.data
 					};
@@ -84,7 +91,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 
 			const buffer = Buffer.concat(data);
 
-			let response: XHRResponse = {
+			const response: XHRResponse = {
 				responseText: buffer.toString(),
 				body: buffer,
 				status: res.statusCode,
@@ -98,7 +105,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 			}
 		});
 		readable.on('error', (err) => {
-			let response: XHRResponse = {
+			const response: XHRResponse = {
 				responseText: localize('error', 'Unable to access {0}. Error: {1}', options.url, err.message),
 				body: Buffer.concat(data),
 				status: 500,
@@ -130,6 +137,10 @@ function assign(destination: any, ...sources: any[]): any {
 	return destination;
 }
 
+function hasNoBody(method: string, code: number) {
+	return method === 'HEAD' || /* Informational */ (code >= 100 && code < 200) || /* No Content */  code === 204 || /* Not Modified */ code === 304;
+}
+
 interface RequestResult {
 	req: http.ClientRequest;
 	res: http.IncomingMessage;
@@ -139,9 +150,9 @@ function request(options: XHROptions): Promise<RequestResult> {
 	let req: http.ClientRequest;
 
 	return new Promise<RequestResult>((c, e) => {
-		let endpoint = parseUrl(options.url);
+		const endpoint = parseUrl(options.url);
 
-		let opts: https.RequestOptions = {
+		const opts: https.RequestOptions = {
 			hostname: endpoint.hostname,
 			agent: options.agent ? options.agent : false,
 			port: endpoint.port ? parseInt(endpoint.port) : (endpoint.protocol === 'https:' ? 443 : 80),
@@ -155,7 +166,7 @@ function request(options: XHROptions): Promise<RequestResult> {
 			opts.auth = options.user + ':' + options.password;
 		}
 
-		let handler = (res: http.IncomingMessage) => {
+		const handler = (res: http.IncomingMessage) => {
 			if (res.statusCode >= 300 && res.statusCode < 400 && options.followRedirects && options.followRedirects > 0 && res.headers['location']) {
 				let location = res.headers['location'];
 				if (location.startsWith('/')) {

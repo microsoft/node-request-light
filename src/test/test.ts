@@ -2,7 +2,7 @@
 
 import test from 'ava';
 
-import { xhr, configure } from '../..';
+import { xhr, configure, XHRResponse } from '../..';
 import { createServer, createSecureServer, createProxy, createSecureProxy } from './utils';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
@@ -39,6 +39,42 @@ test('binary content', async t => {
 
     t.deepEqual(response.body, binary);
     t.is(response.status, 200);
+
+    server.close();
+});
+
+test('304 reply with gzip', async t => {
+    const server = await createServer();
+
+    server.on('request', (req, res) => {
+        res.writeHead(304, { 'Content-Encoding': 'gzip' });
+        res.end();
+    });
+
+    const serverAddress = server.address() as AddressInfo;
+    try {
+        const respose = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}`, headers: { 'If-None-Match': '0x8D97ED13C9F75E1', 'Accept-Encoding': 'gzip' } });
+        t.fail('should throw is ' + respose.status);
+    } catch (errorResponse: any) {
+        t.is(errorResponse.responseText, '');
+        t.is(errorResponse.status, 304);
+    }
+
+    server.close();
+});
+
+test('empty reply with gzip', async t => {
+    const server = await createServer();
+
+    server.on('request', (req, res) => {
+        res.writeHead(200, { 'Content-Encoding': 'gzip' });
+        res.end();
+    });
+
+    const serverAddress = server.address() as AddressInfo;
+    const respose = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}`, headers: { 'Accept-Encoding': 'gzip' } });
+    t.is(respose.responseText, '');
+    t.is(respose.status, 200);
 
     server.close();
 });
