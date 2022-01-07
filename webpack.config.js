@@ -14,7 +14,8 @@ const nodeConfig = {
 	output: {
 		filename: '[name].js',
 		path: path.join(__dirname, 'lib', 'node'),
-		libraryTarget: 'commonjs'
+		libraryTarget: 'commonjs',
+    devtoolModuleFilenameTemplate: '../../[resource-path]'
 	},
   devtool: 'nosources-source-map',
   resolve: {
@@ -47,7 +48,8 @@ const browserConfig = {
 	output: {
 		filename: '[name].js',
 		path: path.join(__dirname, 'lib', 'browser'),
-		libraryTarget: 'commonjs'
+		libraryTarget: 'commonjs',
+    devtoolModuleFilenameTemplate: '../../[resource-path]'
 	},
   devtool: 'nosources-source-map',
   resolve: {
