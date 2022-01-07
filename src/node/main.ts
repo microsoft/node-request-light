@@ -2,16 +2,16 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Url, parse as parseUrl, URL, format } from 'url';
-import * as  https from 'https';
-import * as  http from 'http';
+import { Url, parse as parseUrl, format } from 'url';
+import * as https from 'https';
+import * as http from 'http';
 import * as zlib from 'zlib';
 import * as nls from 'vscode-nls';
 
-import * as createHttpsProxyAgent  from 'https-proxy-agent';
+import * as createHttpsProxyAgent from 'https-proxy-agent';
 import * as createHttpProxyAgent from 'http-proxy-agent';
 
-import { XHRRequest, XHRConfigure, XHROptions, XHRResponse } from '../../api';
+import { XHRRequest, XHRConfigure, XHROptions, XHRResponse, HttpProxyAgent, HttpsProxyAgent } from '../../api';
 
 if (process.env.VSCODE_NLS_CONFIG) {
 	let VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
@@ -28,8 +28,14 @@ export const configure: XHRConfigure = (_proxyUrl: string, _strictSSL: boolean) 
 };
 
 export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
-	const agent = getProxyAgent(options.url, { proxyUrl, strictSSL });
-	options = assign({ agent, strictSSL }, options, );
+	options = { ...options };
+
+	if (typeof options.strictSSL !== 'boolean') {
+		options.strictSSL = strictSSL;
+	}
+	if (!options.agent) {
+		options.agent = getProxyAgent(options.url, { proxyUrl, strictSSL });
+	}
 	if (typeof options.followRedirects !== 'number') {
 		options.followRedirects = 5;
 	}
@@ -57,7 +63,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 			isCompleted = true;
 			if (options.followRedirects > 0 && (res.statusCode >= 300 && res.statusCode <= 303 || res.statusCode === 307)) {
 				let location = res.headers['location'];
-				if(location.startsWith('/')){
+				if (location.startsWith('/')) {
 					let endpoint = parseUrl(options.url);
 					location = format({
 						protocol: endpoint.protocol,
@@ -104,8 +110,8 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 	}), err => {
 		let message: string;
 
-		if (agent) {
-			message = localize('error.cannot.connect.proxy', 'Unable to connect to {0} through a proxy . Error: {1}', options.url, err.message);
+		if (options.agent) {
+			message = localize('error.cannot.connect.proxy', 'Unable to connect to {0} through a proxy. Error: {1}', options.url, err.message);
 		} else {
 			message = localize('error.cannot.connect', 'Unable to connect to {0}. Error: {1}', options.url, err.message);
 		}
@@ -152,7 +158,7 @@ function request(options: XHROptions): Promise<RequestResult> {
 		let handler = (res: http.IncomingMessage) => {
 			if (res.statusCode >= 300 && res.statusCode < 400 && options.followRedirects && options.followRedirects > 0 && res.headers['location']) {
 				let location = res.headers['location'];
-				if(location.startsWith('/')){
+				if (location.startsWith('/')) {
 					location = format({
 						protocol: endpoint.protocol,
 						hostname: endpoint.hostname,
@@ -231,7 +237,7 @@ interface ProxyOptions {
 	strictSSL?: boolean;
 }
 
-function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): any {
+function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpProxyAgent | HttpsProxyAgent | undefined {
 	const requestURL = parseUrl(rawRequestURL);
 	const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL);
 

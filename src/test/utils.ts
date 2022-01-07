@@ -5,7 +5,6 @@
 import * as proxy from 'proxy';
 import * as http from 'http';
 import * as https from 'https';
-import { promises } from 'dns';
 
 const sslKey =
   `-----BEGIN RSA PRIVATE KEY-----
