@@ -19,10 +19,10 @@ if (process.env.VSCODE_NLS_CONFIG) {
 }
 const localize = nls.loadMessageBundle();
 
-let proxyUrl: string = null;
+let proxyUrl: string | undefined = undefined;
 let strictSSL: boolean = true;
 
-export const configure: XHRConfigure = (_proxyUrl: string, _strictSSL: boolean) => {
+export const configure: XHRConfigure = (_proxyUrl: string | undefined, _strictSSL: boolean) => {
 	proxyUrl = _proxyUrl;
 	strictSSL = _strictSSL;
 };

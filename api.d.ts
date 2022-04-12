@@ -27,7 +27,7 @@ export interface XHRRequest {
 }
 
 export interface XHRConfigure {
-    (proxyUrl: string, strictSSL: boolean): void;
+    (proxyUrl: string | undefined, strictSSL: boolean): void;
 }
 
 export type HttpProxyAgent = import('http-proxy-agent').HttpProxyAgent;
