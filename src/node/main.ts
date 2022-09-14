@@ -226,6 +226,7 @@ export function getErrorStatusDescription(status: number): string {
 		case 415: return localize('status.415', 'Unsupported Media Type. The server will not accept the request, because the media type is not supported.');
 		case 500: return localize('status.500', 'Internal Server Error.');
 		case 501: return localize('status.501', 'Not Implemented. The server either does not recognize the request method, or it lacks the ability to fulfill the request.');
+		case 502: return localize('status.502', 'Bad Gateway. The upstream server did not respond.');
 		case 503: return localize('status.503', 'Service Unavailable. The server is currently unavailable (overloaded or down).');
 		default: return localize('status.416', 'HTTP status code {0}', status);
 	}
