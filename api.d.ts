@@ -12,6 +12,7 @@ export interface XHROptions {
     data?: string;
     strictSSL?: boolean;
     followRedirects?: number;
+    token?: import("vscode-jsonrpc").CancellationToken;
     agent?: HttpProxyAgent | HttpsProxyAgent;
 }
 
