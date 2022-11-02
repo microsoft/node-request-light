@@ -8,6 +8,7 @@ import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { IncomingMessage, ServerResponse } from 'http';
+import { CancellationTokenSource } from 'vscode-jsonrpc'
 
 test('text content', async t => {
     const testContent = JSON.stringify({ hello: 1, world: true })
@@ -149,3 +150,25 @@ test('relative redirect', async t => {
 
     server.close();
 });
+
+test('cancellation token', async t => {
+    const server = await createServer();
+
+    server.on('request', (req, res) => {
+        res.writeHead(200, { 'Content-Encoding': 'gzip' });
+        res.end();
+    });
+
+    const serverAddress = server.address() as AddressInfo;
+    const cancellationTokenSource = new CancellationTokenSource();
+    cancellationTokenSource.cancel();
+    try {
+        await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}`, token: cancellationTokenSource.token });
+        t.fail('not aborted')
+    } catch (e) {
+        t.is(e.code, 20);
+        t.is(e.name, 'AbortError');
+    }
+
+    server.close();
+})
