@@ -35,7 +35,6 @@
     "package": "webpack --mode production --devtool hidden-source-map",
     "prepublishOnly": "npm run clean && npm run package && tsc -p ./src/test/ && ava ./lib/test/test.js",
     "clean": "rimraf lib",
-    "postversion": "git push && git push --tags",
     "test": "npm run compile && tsc -p ./src/test/ && ava ./lib/test/test.js"
   }
 }
