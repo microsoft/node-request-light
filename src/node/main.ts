@@ -2,16 +2,16 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Url, parse as parseUrl, format } from 'url';
-import * as https from 'https';
 import * as http from 'http';
-import * as zlib from 'zlib';
+import * as https from 'https';
+import { format, parse as parseUrl, Url } from 'url';
 import * as nls from 'vscode-nls';
+import * as zlib from 'zlib';
 
-import * as createHttpsProxyAgent from 'https-proxy-agent';
 import * as createHttpProxyAgent from 'http-proxy-agent';
+import * as createHttpsProxyAgent from 'https-proxy-agent';
 
-import { XHRRequest, XHRConfigure, XHROptions, XHRResponse, HttpProxyAgent, HttpsProxyAgent } from '../../api';
+import { HttpProxyAgent, HttpsProxyAgent, XHRConfigure, XHROptions, XHRRequest, XHRResponse } from '../../api';
 
 if (process.env.VSCODE_NLS_CONFIG) {
 	const VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
@@ -42,7 +42,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 
 	return request(options).then(result => new Promise<XHRResponse>((c, e) => {
 		const res = result.res;
-		let readable: NodeJS.ReadableStream = res;
+		let readable: import('stream').Readable = res;
 		let isCompleted = false;
 
 		const encoding = res.headers && res.headers['content-encoding'];
@@ -80,9 +80,9 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 					});
 				}
 				if (location) {
-					const newOptions = {
+					const newOptions: XHROptions = {
 						type: options.type, url: location, user: options.user, password: options.password, headers: options.headers,
-						timeout: options.timeout, followRedirects: options.followRedirects - 1, data: options.data
+						timeout: options.timeout, followRedirects: options.followRedirects - 1, data: options.data, token: options.token
 					};
 					xhr(newOptions).then(c, e);
 					return;
@@ -105,30 +105,51 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 			}
 		});
 		readable.on('error', (err) => {
-			const response: XHRResponse = {
-				responseText: localize('error', 'Unable to access {0}. Error: {1}', options.url, err.message),
-				body: Buffer.concat(data),
-				status: 500,
-				headers: {}
-			};
+			let response: XHRResponse | Error;
+			if (AbortError.is(err)) {
+				response = err;
+			} else {
+				response = {
+					responseText: localize('error', 'Unable to access {0}. Error: {1}', options.url, err.message),
+					body: Buffer.concat(data),
+					status: 500,
+					headers: {}
+				};
+			}
 			isCompleted = true;
 			e(response);
 		});
-	}), err => {
-		let message: string;
 
-		if (options.agent) {
-			message = localize('error.cannot.connect.proxy', 'Unable to connect to {0} through a proxy. Error: {1}', options.url, err.message);
+		if (options.token) {
+			if (options.token.isCancellationRequested) {
+				readable.destroy(new AbortError());
+			}
+			options.token.onCancellationRequested(() => {
+				readable.destroy(new AbortError());
+			});
+		}
+	}), err => {
+		let response: XHRResponse | Error;
+		if (AbortError.is(err)) {
+			response = err;
 		} else {
-			message = localize('error.cannot.connect', 'Unable to connect to {0}. Error: {1}', options.url, err.message);
+			let message: string;
+
+			if (options.agent) {
+				message = localize('error.cannot.connect.proxy', 'Unable to connect to {0} through a proxy. Error: {1}', options.url, err.message);
+			} else {
+				message = localize('error.cannot.connect', 'Unable to connect to {0}. Error: {1}', options.url, err.message);
+			}
+
+			response = {
+				responseText: message,
+				body: Buffer.concat([]),
+				status: 404,
+				headers: {}
+			};
 		}
 
-		return Promise.reject<XHRResponse>({
-			responseText: message,
-			body: Buffer.concat([]),
-			status: 404,
-			headers: {}
-		});
+		return Promise.reject(response);
 	});
 }
 
@@ -201,6 +222,15 @@ function request(options: XHROptions): Promise<RequestResult> {
 		}
 
 		req.end();
+
+		if (options.token) {
+			if (options.token.isCancellationRequested) {
+				req.destroy(new AbortError());
+			}
+			options.token.onCancellationRequested(() => {
+				req.destroy(new AbortError());
+			});
+		}
 	});
 }
 
@@ -271,4 +301,18 @@ function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpP
 	};
 
 	return requestURL.protocol === 'http:' ? createHttpProxyAgent(opts) : createHttpsProxyAgent(opts);
+}
+
+class AbortError extends Error {
+	constructor() {
+		super('The user aborted a request');
+		this.name = 'AbortError';
+
+		// see https://github.com/microsoft/TypeScript/issues/13965
+		Object.setPrototypeOf(this, AbortError.prototype);
+	}
+
+	static is(value: any): boolean {
+		return value instanceof AbortError;
+	}
 }
