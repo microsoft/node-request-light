@@ -12,7 +12,7 @@ export interface XHROptions {
     data?: string;
     strictSSL?: boolean;
     followRedirects?: number;
-    token?: import("vscode-jsonrpc").CancellationToken;
+    token?: CancellationToken;
     agent?: HttpProxyAgent | HttpsProxyAgent;
 }
 
@@ -29,6 +29,41 @@ export interface XHRRequest {
 
 export interface XHRConfigure {
     (proxyUrl: string | undefined, strictSSL: boolean): void;
+}
+
+export interface Disposable {
+    /**
+     * Dispose this object.
+     */
+    dispose(): void;
+}
+/**
+ * Represents a typed event.
+ */
+ export interface Event<T> {
+    /**
+     *
+     * @param listener The listener function will be call when the event happens.
+     * @param thisArgs The 'this' which will be used when calling the event listener.
+     * @param disposables An array to which a {{IDisposable}} will be added. The
+     * @return
+    */
+    (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable;
+}
+/**
+ * Defines a CancellationToken. This interface is not
+ * intended to be implemented. A CancellationToken must
+ * be created via a CancellationTokenSource.
+ */
+ export interface CancellationToken {
+    /**
+     * Is `true` when the token has been cancelled, `false` otherwise.
+     */
+    readonly isCancellationRequested: boolean;
+    /**
+     * An [event](#Event) which fires upon cancellation.
+     */
+    readonly onCancellationRequested: Event<any>;
 }
 
 export type HttpProxyAgent = import('http-proxy-agent').HttpProxyAgent;
