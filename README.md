@@ -4,6 +4,7 @@
 [![npm Package](https://img.shields.io/npm/v/request-light.svg?style=flat-square)](https://www.npmjs.org/package/request-light)
 [![NPM Downloads](https://img.shields.io/npm/dm/request-light.svg)](https://npmjs.org/package/request-light)
 [![Build Status](https://github.com/microsoft/node-request-light/workflows/Tests/badge.svg)](https://github.com/microsoft/node-request-light/workflows/Tests)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A lightweight request library intended to be used by VSCode extensions.
 - NodeJS and browser main entry points
