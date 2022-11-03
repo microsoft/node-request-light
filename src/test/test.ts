@@ -166,7 +166,6 @@ test('cancellation token', async t => {
         await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}`, token: cancellationTokenSource.token });
         t.fail('not aborted')
     } catch (e) {
-        t.is(e.code, 20);
         t.is(e.name, 'AbortError');
     }
 
