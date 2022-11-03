@@ -117,7 +117,7 @@ test('proxy https to https', async t => {
 
     const serverAddress = server.address() as AddressInfo;
 
-    const response = await xhr({ url: `https://${serverAddress.address}:${serverAddress.port}` });
+    const response = await xhr({ url: `https://localhost:${serverAddress.port}` });
 
     t.is(response.responseText, 'ok');
     t.is(response.status, 200);
