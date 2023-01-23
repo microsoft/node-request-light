@@ -66,9 +66,9 @@ export interface Disposable {
     readonly onCancellationRequested: Event<any>;
 }
 
-export type HttpProxyAgent = import('http-proxy-agent').HttpProxyAgent;
+export type HttpProxyAgent = any;
 
-export type HttpsProxyAgent = import('https-proxy-agent').HttpsProxyAgent;
+export type HttpsProxyAgent = any;
 
 export type Headers = { [header: string]: string | string[] | undefined };
 
