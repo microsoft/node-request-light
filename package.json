@@ -16,26 +16,24 @@
   "bugs": {
     "url": "https://github.com/microsoft/node-request-light/issues"
   },
-  "devDependencies": {
+  "dependencies": {
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.1",
-    "vscode-nls": "^5.2.0",
-    "typescript": "^4.9.4",
+    "vscode-nls": "^5.2.0"
+  },
+  "devDependencies": {
     "@types/node": "16.x",
-    "vscode-jsonrpc": "^5.0.0",
-    "rimraf": "^4.1.1",
-    "ts-loader": "^9.4.2",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1",
     "ava": "^5.1.1",
-    "proxy": "^1.0.2"
+    "proxy": "^1.0.2",
+    "rimraf": "^4.1.1",
+    "typescript": "^5.0.0",
+    "vscode-jsonrpc": "^5.0.0"
   },
   "scripts": {
-    "compile": "webpack",
-    "watch": "webpack --watch",
-    "bundle": "webpack --mode production --devtool hidden-source-map",
-    "prepack": "npm run clean && npm run bundle && tsc -p ./src/test/ && ava ./lib/test/test.js",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "prepack": "npm run clean && npm run compile",
     "clean": "rimraf lib",
-    "test": "npm run compile && tsc -p ./src/test/ && ava ./lib/test/test.js"
+    "test": "npm run prepack && ava ./lib/test/test.js"
   }
 }

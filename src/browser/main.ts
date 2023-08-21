@@ -34,11 +34,10 @@ export const xhr: XHRRequest = async (options: XHROptions): Promise<XHRResponse>
 	if (options.token) {
 		const controller = new AbortController();
 		if (options.token.isCancellationRequested) {
-			// see https://github.com/microsoft/TypeScript/issues/49609
-			(controller as any).abort();
+			controller.abort();
 		}
 		options.token.onCancellationRequested(() => {
-			(controller as any).abort();
+			controller.abort();
 		});
 		requestInit.signal = controller.signal;
 	}
