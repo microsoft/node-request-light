@@ -7,6 +7,13 @@
     "./lib/node/main.js": "./lib/browser/main.js"
   },
   "typings": "./api",
+  "exports": {
+    ".": {
+      "types": "./api.d.ts",
+      "browser": "./lib/browser/main.js",
+      "default": "./lib/node/main.js"
+    }
+  },
   "author": "Microsoft Corporation",
   "repository": {
     "type": "git",
