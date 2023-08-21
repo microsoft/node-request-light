@@ -2,14 +2,10 @@
  	"compilerOptions": { 
  		"target": "es2017", 
  		"module": "commonjs", 
- 		"moduleResolution": "node", 
+		"moduleResolution": "node16",
+		"skipLibCheck": true,
  		"sourceMap": true, 
  		"stripInternal": true, 
- 		"outDir": "../../lib/browser",
-		"lib": [
-			"es2017",
-			"webworker"
-		],
-		"types": []
+ 		"outDir": "./lib"
 	 }
 } 
