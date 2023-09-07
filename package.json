@@ -20,15 +20,15 @@
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.1",
     "vscode-nls": "^5.2.0",
-    "typescript": "^4.9.4",
+    "typescript": "^5.2.2",
     "@types/node": "16.x",
     "vscode-jsonrpc": "^5.0.0",
-    "rimraf": "^4.1.1",
-    "ts-loader": "^9.4.2",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1",
-    "ava": "^5.1.1",
-    "proxy": "^1.0.2"
+    "rimraf": "^5.0.1",
+    "ts-loader": "^9.4.4",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "ava": "^5.3.1",
+    "proxy": "^2.1.1"
   },
   "scripts": {
     "compile": "webpack",

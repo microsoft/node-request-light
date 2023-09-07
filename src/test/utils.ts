@@ -62,16 +62,16 @@ export const ssl = {
 
 export function createProxy(): Promise<http.Server> {
   return new Promise((resolve, _reject) => {
-    const server = proxy(http.createServer());
+    const server = proxy.createProxy(http.createServer());
     server.listen(0, '127.0.0.1', () => {
       resolve(server)
     });
   });
 }
 
-export function createSecureProxy(): Promise<https.Server> {
+export function createSecureProxy(): Promise<http.Server> {
   return new Promise((resolve, _reject) => {
-    const server = proxy(https.createServer(ssl));
+    const server = proxy.createProxy(https.createServer(ssl));
     server.listen(0, '127.0.0.1', () => {
       resolve(server)
     });
