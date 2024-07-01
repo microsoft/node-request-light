@@ -19,7 +19,7 @@
   "devDependencies": {
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.5",
-    "vscode-nls": "^5.2.0",
+    "@vscode/l10n": "^0.0.18",
     "typescript": "^5.5.2",
     "@types/node": "18.x",
     "vscode-jsonrpc": "^8.2.1",
