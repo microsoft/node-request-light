@@ -5,16 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch via NPM",
-            "request": "launch",
-            "runtimeArgs": [
-                "test"
+            "name": "Run Tests",
+            "program": "${workspaceFolder}/node_modules/.bin/ava",
+            "args": [
+                "./lib/test/test.js"
             ],
-            "runtimeExecutable": "npm",
+            "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "pwa-node"
+            "type": "node"
         }
     ]
 }
