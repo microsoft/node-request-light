@@ -8,10 +8,10 @@ import { format, parse as parseUrl, Url } from 'url';
 import * as nls from 'vscode-nls';
 import * as zlib from 'zlib';
 
-import * as createHttpProxyAgent from 'http-proxy-agent';
-import * as createHttpsProxyAgent from 'https-proxy-agent';
+import { HttpProxyAgent } from 'http-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
-import { HttpProxyAgent, HttpsProxyAgent, XHRConfigure, XHROptions, XHRRequest, XHRResponse } from '../../api';
+import { XHRConfigure, XHROptions, XHRRequest, XHRResponse } from '../../api';
 
 if (process.env.VSCODE_NLS_CONFIG) {
 	const VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
@@ -279,7 +279,7 @@ interface ProxyOptions {
 	strictSSL?: boolean;
 }
 
-function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpProxyAgent | HttpsProxyAgent | undefined {
+function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpProxyAgent<string> | HttpsProxyAgent<string> | undefined {
 	const requestURL = parseUrl(rawRequestURL);
 	const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL);
 
@@ -287,21 +287,11 @@ function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpP
 		return null;
 	}
 
-	const proxyEndpoint = parseUrl(proxyURL);
-
-	if (!/^https?:$/.test(proxyEndpoint.protocol)) {
+	if (!/^https?:/.test(proxyURL)) {
 		return null;
 	}
 
-	const opts = {
-		host: proxyEndpoint.hostname,
-		port: Number(proxyEndpoint.port),
-		auth: proxyEndpoint.auth,
-		rejectUnauthorized: (typeof options.strictSSL === 'boolean') ? options.strictSSL : true,
-		protocol: proxyEndpoint.protocol
-	};
-
-	return requestURL.protocol === 'http:' ? createHttpProxyAgent(opts) : createHttpsProxyAgent(opts);
+	return requestURL.protocol === 'http:' ? new HttpProxyAgent(proxyURL) : new HttpsProxyAgent(proxyURL, { rejectUnauthorized: options.strictSSL ?? true });
 }
 
 class AbortError extends Error {

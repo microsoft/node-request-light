@@ -104,27 +104,37 @@ test('proxy http to http', async t => {
     proxy.close();
 });
 
-test('proxy https to https', async t => {
+test.only('proxy https to https', async t => {
     let proxyUsed = false;
     const server = await createSecureServer();
+    
     const proxy = await createSecureProxy();
-    server.on('request', (req, res) => res.end('ok'));
-    proxy.on('request', () => proxyUsed = true);
+    console.log('proxy', proxy.address() as AddressInfo);
+    try {
+        server.on('request', (req, res) => {
+            res.end('ok')
+        });
+        proxy.on('request', () => {
+            proxyUsed = true
+        });
 
-    const proxyAddress = proxy.address() as AddressInfo;
+        const proxyAddress = proxy.address() as AddressInfo;
+        console.log('proxy', proxyAddress.port);
 
-    configure(`https://${proxyAddress.address}:${proxyAddress.port}`, false);
+        configure(`https://${proxyAddress.address}:${proxyAddress.port}`, false);
 
-    const serverAddress = server.address() as AddressInfo;
+        const serverAddress = server.address() as AddressInfo;
+        console.log('server', server.address() as AddressInfo);
 
-    const response = await xhr({ url: `https://${serverAddress.address}:${serverAddress.port}` });
+        const response = await xhr({ url: `https://${serverAddress.address}:${serverAddress.port}` });
 
-    t.is(response.responseText, 'ok');
-    t.is(response.status, 200);
-    t.is(proxyUsed, true);
-
-    server.close();
-    proxy.close();
+        t.is(response.responseText, 'ok');
+        t.is(response.status, 200);
+        t.is(proxyUsed, true);
+    } finally {
+        server.close();
+        proxy.close();
+    }
 });
 
 test('relative redirect', async t => {
