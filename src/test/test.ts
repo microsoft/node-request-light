@@ -7,177 +7,179 @@ import { createServer, createSecureServer, createProxy, createSecureProxy } from
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { IncomingMessage, ServerResponse } from 'http';
+import { IncomingMessage, Server, ServerResponse } from 'http';
 import { CancellationTokenSource } from 'vscode-jsonrpc'
 
+function getUrl(server: Server<any, any>, protocol: string = 'http') {
+	const address = server.address() as AddressInfo;
+	return `${protocol}://${address.address}:${address.port}`;
+}
+
 test('text content', async t => {
-    const testContent = JSON.stringify({ hello: 1, world: true })
+	const testContent = JSON.stringify({ hello: 1, world: true })
 
-    const server = await createServer();
-    server.on('request', (req, res) => res.end(testContent));
+	const server = await createServer();
+	try {
+		server.on('request', (req, res) => res.end(testContent));
 
-    const serverAddress = server.address() as AddressInfo;
+		configure(undefined, false);
+		const response = await xhr({ url: getUrl(server) });
 
-    const response = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}` });
-
-    t.is(response.responseText, testContent);
-    t.is(response.body.toString(), testContent);
-    t.is(response.status, 200);
-
-    server.close();
+		t.is(response.responseText, testContent);
+		t.is(response.body.toString(), testContent);
+		t.is(response.status, 200);
+	} finally {
+		server.close();
+	}
 });
 
 test('binary content', async t => {
-    const server = await createServer();
+	const binary = await fs.readFile(join(__dirname, '..', '..', 'src', 'test', 'test.png'));
 
-    const binary = await fs.readFile(join(__dirname, '..', '..', 'src', 'test', 'test.png'));
+	const server = await createServer();
+	try {
+		server.on('request', (req, res) => res.end(binary));
 
-    server.on('request', (req, res) => res.end(binary));
+		configure(undefined, false);
+		const response = await xhr({ url: getUrl(server) });
 
-    const serverAddress = server.address() as AddressInfo;
-
-    const response = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}` });
-
-    t.deepEqual(response.body, binary);
-    t.is(response.status, 200);
-
-    server.close();
+		t.deepEqual(response.body, binary);
+		t.is(response.status, 200);
+	} finally {
+		server.close();
+	}
 });
 
 test('304 reply with gzip', async t => {
-    const server = await createServer();
+	const server = await createServer();
+	try {
 
-    server.on('request', (req, res) => {
-        res.writeHead(304, { 'Content-Encoding': 'gzip' });
-        res.end();
-    });
+		server.on('request', (req, res) => {
+			res.writeHead(304, { 'Content-Encoding': 'gzip' });
+			res.end();
+		});
 
-    const serverAddress = server.address() as AddressInfo;
-    try {
-        const respose = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}`, headers: { 'If-None-Match': '0x8D97ED13C9F75E1', 'Accept-Encoding': 'gzip' } });
-        t.fail('should throw is ' + respose.status);
-    } catch (errorResponse: any) {
-        t.is(errorResponse.responseText, '');
-        t.is(errorResponse.status, 304);
-    }
-
-    server.close();
+		configure(undefined, false);
+		const respose = await xhr({ url: getUrl(server), headers: { 'If-None-Match': '0x8D97ED13C9F75E1', 'Accept-Encoding': 'gzip' } });
+		t.fail('should throw is ' + respose.status);
+	} catch (errorResponse: any) {
+		t.is(errorResponse.responseText, '');
+		t.is(errorResponse.status, 304);
+	} finally {
+		server.close();
+	}
 });
 
 test('empty reply with gzip', async t => {
-    const server = await createServer();
+	const server = await createServer();
+	try {
+		server.on('request', (req, res) => {
+			res.writeHead(200, { 'Content-Encoding': 'gzip' });
+			res.end();
+		});
+		configure(undefined, false);
+		const respose = await xhr({ url: getUrl(server), headers: { 'Accept-Encoding': 'gzip' } });
 
-    server.on('request', (req, res) => {
-        res.writeHead(200, { 'Content-Encoding': 'gzip' });
-        res.end();
-    });
-
-    const serverAddress = server.address() as AddressInfo;
-    const respose = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}`, headers: { 'Accept-Encoding': 'gzip' } });
-    t.is(respose.responseText, '');
-    t.is(respose.status, 200);
-
-    server.close();
+		t.is(respose.responseText, '');
+		t.is(respose.status, 200);
+	} finally {
+		server.close();
+	}
 });
 
 
 test('proxy http to http', async t => {
-    let proxyUsed = false;
-    const server = await createServer();
-    const proxy = await createProxy();
-    server.on('request', (req, res) => res.end('ok'));
-    proxy.on('request', () => proxyUsed = true);
+	let proxyUsed = false;
+	const server = await createServer();
+	const proxy = await createProxy();
+	try {
+		server.on('request', (req, res) => res.end('ok'));
+		proxy.on('request', () => proxyUsed = true);
 
-    const proxyAddress = proxy.address() as AddressInfo;
+		configure(getUrl(proxy), false);
+		const response = await xhr({ url: getUrl(server) });
 
-    configure(`http://${proxyAddress.address}:${proxyAddress.port}`, false);
+		t.is(response.responseText, 'ok');
+		t.is(response.status, 200);
+		t.is(proxyUsed, true);
 
-    const serverAddress = server.address() as AddressInfo;
-
-    const response = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}` });
-
-    t.is(response.responseText, 'ok');
-    t.is(response.status, 200);
-    t.is(proxyUsed, true);
-
-    server.close();
-    proxy.close();
+	} finally {
+		server.close();
+		proxy.close();
+	}
 });
 
-test.only('proxy https to https', async t => {
-    let proxyUsed = false;
-    const server = await createSecureServer();
-    
-    const proxy = await createSecureProxy();
-    console.log('proxy', proxy.address() as AddressInfo);
-    try {
-        server.on('request', (req, res) => {
-            res.end('ok')
-        });
-        proxy.on('request', () => {
-            proxyUsed = true
-        });
+test('proxy https to https', async t => {
+	let proxyUsed = false;
+	const server = await createSecureServer();
 
-        const proxyAddress = proxy.address() as AddressInfo;
-        console.log('proxy', proxyAddress.port);
+	const proxy = await createSecureProxy();
+	try {
+		server.on('request', (req, res) => {
+			res.end('ok')
+		});
+		proxy.on('connect', () => {
+			proxyUsed = true
+		});
 
-        configure(`https://${proxyAddress.address}:${proxyAddress.port}`, false);
+		configure(getUrl(proxy, 'https'), false);
+		const response = await xhr({ url: getUrl(server, 'https') });
 
-        const serverAddress = server.address() as AddressInfo;
-        console.log('server', server.address() as AddressInfo);
+		t.is(response.responseText, 'ok');
+		t.is(response.status, 200);
+		t.is(proxyUsed, true);
 
-        const response = await xhr({ url: `https://${serverAddress.address}:${serverAddress.port}` });
 
-        t.is(response.responseText, 'ok');
-        t.is(response.status, 200);
-        t.is(proxyUsed, true);
-    } finally {
-        server.close();
-        proxy.close();
-    }
+	} finally {
+		server.close();
+		proxy.close();
+	}
 });
 
 test('relative redirect', async t => {
-    const server = await createServer();
+	const server = await createServer();
+	try {
+		server.on('request', (req: IncomingMessage, res: ServerResponse) => {
+			if (req.url.includes('/foo')) {
+				res.setHeader('Location', '/bar');
+				res.statusCode = 301;
+				res.end();
+			}
+			if (req.url.includes('/bar')) {
+				res.end('Bar');
+			}
+		});
+		configure(undefined, false);
+		const response = await xhr({ url: `${getUrl(server)}/foo` });
 
-    server.on('request', (req: IncomingMessage, res: ServerResponse) => {
-        if (req.url.includes('/foo')) {
-            res.setHeader('Location', '/bar');
-            res.statusCode = 301;
-            res.end();
-        }
-        if (req.url.includes('/bar')) {
-            res.end('Bar');
-        }
-    });
+		t.deepEqual(response.body.toString(), 'Bar');
+		t.is(response.status, 200);
+	} finally {
+		server.close();
+	}
 
-    const serverAddress = server.address() as AddressInfo;
-
-    const response = await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}/foo` });
-
-    t.deepEqual(response.body.toString(), 'Bar');
-    t.is(response.status, 200);
-
-    server.close();
 });
 
 test('cancellation token', async t => {
-    const server = await createServer();
+	const server = await createServer();
 
-    server.on('request', (req, res) => {
-        res.writeHead(200, { 'Content-Encoding': 'gzip' });
-        res.end();
-    });
+	try {
+		server.on('request', (req, res) => {
+			res.writeHead(200, { 'Content-Encoding': 'gzip' });
+			res.end();
+		});
 
-    const serverAddress = server.address() as AddressInfo;
-    const cancellationTokenSource = new CancellationTokenSource();
-    cancellationTokenSource.cancel();
-    try {
-        await xhr({ url: `http://${serverAddress.address}:${serverAddress.port}`, token: cancellationTokenSource.token });
-        t.fail('not aborted')
-    } catch (e) {
-        t.is(e.name, 'AbortError');
-    }
+		const cancellationTokenSource = new CancellationTokenSource();
+		cancellationTokenSource.cancel();
+		try {
+			configure(undefined, false);
 
-    server.close();
+			await xhr({ url: getUrl(server), token: cancellationTokenSource.token });
+			t.fail('not aborted')
+		} catch (e) {
+			t.is(e.name, 'AbortError');
+		}
+	} finally {
+		server.close();
+	}
 })
