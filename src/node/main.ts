@@ -5,19 +5,13 @@
 import * as http from 'http';
 import * as https from 'https';
 import { format, parse as parseUrl, Url } from 'url';
-import * as nls from 'vscode-nls';
+import * as l10n from '@vscode/l10n';
 import * as zlib from 'zlib';
 
-import * as createHttpProxyAgent from 'http-proxy-agent';
-import * as createHttpsProxyAgent from 'https-proxy-agent';
+import { HttpProxyAgent } from 'http-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
-import { HttpProxyAgent, HttpsProxyAgent, XHRConfigure, XHROptions, XHRRequest, XHRResponse } from '../../api';
-
-if (process.env.VSCODE_NLS_CONFIG) {
-	const VSCODE_NLS_CONFIG = process.env.VSCODE_NLS_CONFIG;
-	nls.config(JSON.parse(VSCODE_NLS_CONFIG));
-}
-const localize = nls.loadMessageBundle();
+import { XHRConfigure, XHROptions, XHRRequest, XHRResponse } from '../../api';
 
 let proxyUrl: string | undefined = undefined;
 let strictSSL: boolean = true;
@@ -110,7 +104,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 				response = err;
 			} else {
 				response = {
-					responseText: localize('error', 'Unable to access {0}. Error: {1}', options.url, err.message),
+					responseText: l10n.t('Unable to access {0}. Error: {1}', options.url, err.message),
 					body: Buffer.concat(data),
 					status: 500,
 					headers: {}
@@ -136,9 +130,9 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 			let message: string;
 
 			if (options.agent) {
-				message = localize('error.cannot.connect.proxy', 'Unable to connect to {0} through a proxy. Error: {1}', options.url, err.message);
+				message = l10n.t('Unable to connect to {0} through a proxy. Error: {1}', options.url, err.message);
 			} else {
-				message = localize('error.cannot.connect', 'Unable to connect to {0}. Error: {1}', options.url, err.message);
+				message = l10n.t('Unable to connect to {0}. Error: {1}', options.url, err.message);
 			}
 
 			response = {
@@ -239,26 +233,26 @@ export function getErrorStatusDescription(status: number): string {
 		return void 0;
 	}
 	switch (status) {
-		case 400: return localize('status.400', 'Bad request. The request cannot be fulfilled due to bad syntax.');
-		case 401: return localize('status.401', 'Unauthorized. The server is refusing to respond.');
-		case 403: return localize('status.403', 'Forbidden. The server is refusing to respond.');
-		case 404: return localize('status.404', 'Not Found. The requested location could not be found.');
-		case 405: return localize('status.405', 'Method not allowed. A request was made using a request method not supported by that location.');
-		case 406: return localize('status.406', 'Not Acceptable. The server can only generate a response that is not accepted by the client.');
-		case 407: return localize('status.407', 'Proxy Authentication Required. The client must first authenticate itself with the proxy.');
-		case 408: return localize('status.408', 'Request Timeout. The server timed out waiting for the request.');
-		case 409: return localize('status.409', 'Conflict. The request could not be completed because of a conflict in the request.');
-		case 410: return localize('status.410', 'Gone. The requested page is no longer available.');
-		case 411: return localize('status.411', 'Length Required. The "Content-Length" is not defined.');
-		case 412: return localize('status.412', 'Precondition Failed. The precondition given in the request evaluated to false by the server.');
-		case 413: return localize('status.413', 'Request Entity Too Large. The server will not accept the request, because the request entity is too large.');
-		case 414: return localize('status.414', 'Request-URI Too Long. The server will not accept the request, because the URL is too long.');
-		case 415: return localize('status.415', 'Unsupported Media Type. The server will not accept the request, because the media type is not supported.');
-		case 500: return localize('status.500', 'Internal Server Error.');
-		case 501: return localize('status.501', 'Not Implemented. The server either does not recognize the request method, or it lacks the ability to fulfill the request.');
-		case 502: return localize('status.502', 'Bad Gateway. The upstream server did not respond.');
-		case 503: return localize('status.503', 'Service Unavailable. The server is currently unavailable (overloaded or down).');
-		default: return localize('status.416', 'HTTP status code {0}', status);
+		case 400: return l10n.t('Bad request. The request cannot be fulfilled due to bad syntax.');
+		case 401: return l10n.t('Unauthorized. The server is refusing to respond.');
+		case 403: return l10n.t('Forbidden. The server is refusing to respond.');
+		case 404: return l10n.t('Not Found. The requested location could not be found.');
+		case 405: return l10n.t('Method not allowed. A request was made using a request method not supported by that location.');
+		case 406: return l10n.t('Not Acceptable. The server can only generate a response that is not accepted by the client.');
+		case 407: return l10n.t('Proxy Authentication Required. The client must first authenticate itself with the proxy.');
+		case 408: return l10n.t('Request Timeout. The server timed out waiting for the request.');
+		case 409: return l10n.t('Conflict. The request could not be completed because of a conflict in the request.');
+		case 410: return l10n.t('Gone. The requested page is no longer available.');
+		case 411: return l10n.t('Length Required. The "Content-Length" is not defined.');
+		case 412: return l10n.t('Precondition Failed. The precondition given in the request evaluated to false by the server.');
+		case 413: return l10n.t('Request Entity Too Large. The server will not accept the request, because the request entity is too large.');
+		case 414: return l10n.t('Request-URI Too Long. The server will not accept the request, because the URL is too long.');
+		case 415: return l10n.t('Unsupported Media Type. The server will not accept the request, because the media type is not supported.');
+		case 500: return l10n.t('Internal Server Error.');
+		case 501: return l10n.t('Not Implemented. The server either does not recognize the request method, or it lacks the ability to fulfill the request.');
+		case 502: return l10n.t('Bad Gateway. The upstream server did not respond.');
+		case 503: return l10n.t('Service Unavailable. The server is currently unavailable (overloaded or down).');
+		default: return l10n.t('HTTP status code {0}', status);
 	}
 }
 
@@ -279,7 +273,7 @@ interface ProxyOptions {
 	strictSSL?: boolean;
 }
 
-function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpProxyAgent | HttpsProxyAgent | undefined {
+function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpProxyAgent<string> | HttpsProxyAgent<string> | undefined {
 	const requestURL = parseUrl(rawRequestURL);
 	const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL);
 
@@ -287,21 +281,11 @@ function getProxyAgent(rawRequestURL: string, options: ProxyOptions = {}): HttpP
 		return null;
 	}
 
-	const proxyEndpoint = parseUrl(proxyURL);
-
-	if (!/^https?:$/.test(proxyEndpoint.protocol)) {
+	if (!/^https?:/.test(proxyURL)) {
 		return null;
 	}
 
-	const opts = {
-		host: proxyEndpoint.hostname,
-		port: Number(proxyEndpoint.port),
-		auth: proxyEndpoint.auth,
-		rejectUnauthorized: (typeof options.strictSSL === 'boolean') ? options.strictSSL : true,
-		protocol: proxyEndpoint.protocol
-	};
-
-	return requestURL.protocol === 'http:' ? createHttpProxyAgent(opts) : createHttpsProxyAgent(opts);
+	return requestURL.protocol === 'http:' ? new HttpProxyAgent(proxyURL) : new HttpsProxyAgent(proxyURL, { rejectUnauthorized: options.strictSSL ?? true });
 }
 
 class AbortError extends Error {
