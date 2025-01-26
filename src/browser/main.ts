@@ -3,11 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { XHRRequest, XHRConfigure, XHROptions, XHRResponse } from '../../api';
+import { StreamXHROptions, StreamXHRResponse, XHRConfigure, XHROptions, XHRResponse } from '../../api';
 
 export const configure: XHRConfigure = (_proxyUrl: string, _strictSSL: boolean) => { };
 
-export const xhr: XHRRequest = async (options: XHROptions): Promise<XHRResponse> => {
+export function xhr(options: XHROptions): Promise<XHRResponse> 
+export function xhr(options: StreamXHROptions): Promise<StreamXHRResponse> 
+export async function xhr(options: XHROptions | StreamXHROptions): Promise<XHRResponse | StreamXHRResponse> {
 	const requestHeaders = new Headers();
 	if (options.headers) {
 		for (const key in options.headers) {
@@ -34,21 +36,29 @@ export const xhr: XHRRequest = async (options: XHROptions): Promise<XHRResponse>
 	if (options.token) {
 		const controller = new AbortController();
 		if (options.token.isCancellationRequested) {
-			// see https://github.com/microsoft/TypeScript/issues/49609
-			(controller as any).abort();
+			controller.abort();
 		}
 		options.token.onCancellationRequested(() => {
-			(controller as any).abort();
+			controller.abort();
 		});
 		requestInit.signal = controller.signal;
 	}
 
 	const requestInfo = new Request(options.url, requestInit);
 	const response = await fetch(requestInfo);
-	const resposeHeaders: any = {};
+	const responseHeaders: any = {};
 	response.headers.forEach((value, key) => {
-		resposeHeaders[key] = value;
+		responseHeaders[key] = value;
 	});
+
+	if (isStreamXHROptions(options)) {
+		return new class {
+			get responseText() { return ''; };
+			get body() { return response.body; };
+			readonly status = response.status;
+			readonly headers = responseHeaders;
+		}
+	} 
 
 	const buffer = await response.arrayBuffer();
 
@@ -56,8 +66,12 @@ export const xhr: XHRRequest = async (options: XHROptions): Promise<XHRResponse>
 		get responseText() { return new TextDecoder().decode(buffer); };
 		get body() { return new Uint8Array(buffer) };
 		readonly status = response.status;
-		readonly headers = resposeHeaders;
+		readonly headers = responseHeaders;
 	}
+}
+
+function isStreamXHROptions(options: XHROptions | StreamXHROptions): options is StreamXHROptions {
+	return (options as StreamXHROptions).responseType === 'stream';
 }
 
 export function getErrorStatusDescription(status: number): string {

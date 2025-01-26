@@ -6,12 +6,13 @@ import * as http from 'http';
 import * as https from 'https';
 import { format, parse as parseUrl, Url } from 'url';
 import * as l10n from '@vscode/l10n';
+import * as stream from 'stream/web'
 import * as zlib from 'zlib';
 
 import { HttpProxyAgent } from 'http-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
-import { XHRConfigure, XHROptions, XHRRequest, XHRResponse } from '../../api';
+import { StreamXHROptions, StreamXHRResponse, XHRConfigure, XHROptions, XHRRequest, XHRResponse } from '../../api';
 
 let proxyUrl: string | undefined = undefined;
 let strictSSL: boolean = true;
@@ -21,7 +22,9 @@ export const configure: XHRConfigure = (_proxyUrl: string | undefined, _strictSS
 	strictSSL = _strictSSL;
 };
 
-export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
+export function xhr(options: XHROptions): Promise<XHRResponse> 
+export function xhr(options: StreamXHROptions): Promise<StreamXHRResponse> 
+export function xhr(options: XHROptions | StreamXHROptions): Promise<XHRResponse | StreamXHRResponse> {
 	options = { ...options };
 
 	if (typeof options.strictSSL !== 'boolean') {
@@ -34,7 +37,7 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 		options.followRedirects = 5;
 	}
 
-	return request(options).then(result => new Promise<XHRResponse>((c, e) => {
+	return request(options).then(result => new Promise<XHRResponse | StreamXHRResponse>((c, e) => {
 		const res = result.res;
 		let readable: import('stream').Readable = res;
 		let isCompleted = false;
@@ -55,6 +58,27 @@ export const xhr: XHRRequest = (options: XHROptions): Promise<XHRResponse> => {
 				readable = inflate;
 			}
 		}
+
+		if (isStreamXHROptions(options)) {
+			const body = stream.ReadableStream.from(readable);
+			if (options.token) {
+				if (options.token.isCancellationRequested) {
+					readable.destroy(new AbortError());
+				}
+				options.token.onCancellationRequested(() => {
+					readable.destroy(new AbortError());
+				});
+			}
+			const response: StreamXHRResponse = {
+				responseText: '',
+				body,
+				status: res.statusCode,
+				headers: res.headers || {}
+			};
+			c(response);
+			return;
+		}
+
 		const data: any = [];
 		readable.on('data', c => data.push(c));
 		readable.on('end', () => {
@@ -254,6 +278,10 @@ export function getErrorStatusDescription(status: number): string {
 		case 503: return l10n.t('Service Unavailable. The server is currently unavailable (overloaded or down).');
 		default: return l10n.t('HTTP status code {0}', status);
 	}
+}
+
+function isStreamXHROptions(options: XHROptions | StreamXHROptions): options is StreamXHROptions {
+	return (options as StreamXHROptions).responseType === 'stream';
 }
 
 // proxy handling
