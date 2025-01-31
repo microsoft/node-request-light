@@ -199,7 +199,7 @@ test('stream responseType', async t => {
 
 		configure(undefined, false);
 		const response = await xhr({ url: getUrl(server), responseType: 'stream' });
-		const readable = Readable.fromWeb(response.body)
+		const readable = getReadableFromWeb(response.body)
 
 		let data = '';
 		readable.on('data', chunk => {
@@ -226,7 +226,7 @@ test('stream responseType (for await)', async t => {
 
 		configure(undefined, false);
 		const response = await xhr({ url: getUrl(server), responseType: 'stream' });
-		const readable = Readable.fromWeb(response.body)
+		const readable = getReadableFromWeb(response.body)
 
 		let data = '';
 		for await (const chunk of readable) {
@@ -262,7 +262,7 @@ test('stream responseType with redirect', async t => {
 		const url = new URL(getUrl(server));
 		url.pathname = '/foo';
 		const response = await xhr({ url: url.toString(), responseType: 'stream' });
-		const readable = Readable.fromWeb(response.body);
+		const readable = getReadableFromWeb(response.body);
 
 		let data = '';
 		readable.on('data', chunk => {
@@ -293,7 +293,7 @@ test('stream responseType cancellation closes readable body', async t => {
 		configure(undefined, false);
 		const response = await xhr({ url: getUrl(server), responseType: 'stream', token: cancellationTokenSource.token });
 
-		const readable = Readable.fromWeb(response.body);
+		const readable = getReadableFromWeb(response.body);
 
 		cancellationTokenSource.cancel();
 
@@ -427,3 +427,21 @@ test('stream responseType in browser with non-ASCII text', async t => {
 		server.close();
 	}
 });
+
+function getReadableFromWeb(body: ReadableStream): Readable {
+	const reader = body.getReader();
+	return new Readable({
+		async read() {
+			try {
+				const { done, value } = await reader.read();
+				if (done) {
+					this.push(null);
+				} else {
+					this.push(Buffer.from(value));
+				}
+			} catch (err) {
+				this.destroy(err);
+			}
+		}
+	});
+}

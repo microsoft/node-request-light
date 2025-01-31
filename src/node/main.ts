@@ -60,7 +60,16 @@ export function xhr(options: XHROptions | StreamXHROptions): Promise<XHRResponse
 		}
 
 		if (isStreamXHROptions(options)) {
-			const body = stream.ReadableStream.from(readable);
+			const body = new ReadableStream({
+				start(controller) {
+					readable.on('data', chunk => controller.enqueue(chunk));
+					readable.on('end', () => controller.close());
+					readable.on('error', err => controller.error(err));
+				},
+				cancel() {
+					readable.destroy(new AbortError());
+				}
+			});
 			if (options.token) {
 				if (options.token.isCancellationRequested) {
 					readable.destroy(new AbortError());
