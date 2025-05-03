@@ -16,6 +16,10 @@ export interface XHROptions {
     agent?: HttpProxyAgent | HttpsProxyAgent;
 }
 
+export interface StreamXHROptions extends XHROptions {
+    responseType: 'stream';
+}
+
 export interface XHRResponse {
     readonly responseText: string;
     readonly body: Uint8Array;
@@ -23,8 +27,11 @@ export interface XHRResponse {
     readonly headers: Headers;
 }
 
+export type StreamXHRResponse = Omit<XHRResponse, 'body'> & { readonly body: Response['body'] };
+
 export interface XHRRequest {
-    (options: XHROptions): Promise<XHRResponse>
+    (options: XHROptions): Promise<XHRResponse>;
+    (options: StreamXHROptions): Promise<StreamXHRResponse>;
 }
 
 export interface XHRConfigure {
