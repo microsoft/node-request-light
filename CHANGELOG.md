@@ -1,3 +1,6 @@
+0.9.0 / 2025-06-30
+==================
+* support streaming: StreamXHROptions and StreamXHRResponse
 
 0.5.0 / 2021-07-12
 ==================
