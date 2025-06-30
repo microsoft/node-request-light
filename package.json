@@ -41,8 +41,8 @@
     "compile": "webpack",
     "watch": "webpack --watch",
     "bundle": "webpack --mode production --devtool hidden-source-map",
-    "prepack": "npm run clean && npm run bundle && tsc -p ./src/test/ && ava ./lib/test/test.js",
+    "prepack": "npm run clean && npm run bundle && tsc -p ./src/test/ && ava ./lib/**/test.js",
     "clean": "rimraf lib",
-    "test": "npm run compile && tsc -p ./src/test/ && ava ./lib/test/test.js"
+    "test": "npm run compile && tsc -p ./src/test/ && ava ./lib/**/test.js"
   }
 }
