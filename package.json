@@ -34,7 +34,7 @@
     "ts-loader": "^9.5.2",
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1",
-    "ava": "^6.4.0",
+    "ava": "^8.0.1",
     "proxy": "^2.2.0"
   },
   "scripts": {
